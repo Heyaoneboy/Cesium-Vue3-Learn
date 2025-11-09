@@ -63,27 +63,27 @@ onMounted(() => {
     }
   });
 
-/*  //广告牌
-  viewer.entities.add({
-    name: '广告牌',
-    position: Cesium.Cartesian3.fromDegrees(121.49491, 31.24169),
-    billboard: {
-      image: '/img/东方明珠.svg',
-      width: 64,
-      height: 64,
-      sizeInMeters: false,
-      scale: 1.0
-    },
-    label: {
-      text: '东方明珠',
-      font: '14px sans-serif',
-      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-      outlineWidth: 2,
-      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-      pixelOffset: new Cesium.Cartesian2(0, -30)
+  /*  //广告牌
+    viewer.entities.add({
+      name: '广告牌',
+      position: Cesium.Cartesian3.fromDegrees(121.49491, 31.24169),
+      billboard: {
+        image: '/img/东方明珠.svg',
+        width: 64,
+        height: 64,
+        sizeInMeters: false,
+        scale: 1.0
+      },
+      label: {
+        text: '东方明珠',
+        font: '14px sans-serif',
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        outlineWidth: 2,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset: new Cesium.Cartesian2(0, -30)
 
-    }
-  })*/
+      }
+    })*/
 
   //连接线
   viewer.entities.add({
@@ -115,33 +115,33 @@ onMounted(() => {
     }
   })
 
-/*  //圆形
-  viewer.entities.add({
-    name: '圆形',
-    position: Cesium.Cartesian3.fromDegrees(116.0, 39.9092,),
-    ellipse: {
-      semiMajorAxis: 30000,//长半径
-      semiMinorAxis: 30000,//短半径
-      material: new Cesium.ImageMaterialProperty({
-        image: '/img/纹理.png',
-        transparent: false,//支持透明
-        repeat: new Cesium.Cartesian2(128, 128)//重复次数
-      })
-      //材质
-    }
-  })*/
+  /*  //圆形
+    viewer.entities.add({
+      name: '圆形',
+      position: Cesium.Cartesian3.fromDegrees(116.0, 39.9092,),
+      ellipse: {
+        semiMajorAxis: 30000,//长半径
+        semiMinorAxis: 30000,//短半径
+        material: new Cesium.ImageMaterialProperty({
+          image: '/img/纹理.png',
+          transparent: false,//支持透明
+          repeat: new Cesium.Cartesian2(128, 128)//重复次数
+        })
+        //材质
+      }
+    })*/
 
-/*  //加载三维模型
-  viewer.entities.add({
-    name: '雪人',
-    position: Cesium.Cartesian3.fromDegrees(116.3974, 39.9192, 0),
-    model: {
-      uri: '/img/snowman.glb',  //不能使用url
-      scale: 12.0,
-      minimumPixelSize: 640,      // 模型太远时最小显示尺寸
-      maximumScale: 2000          // 限制最大缩放倍数
-    }
-  })*/
+  /*  //加载三维模型
+    viewer.entities.add({
+      name: '雪人',
+      position: Cesium.Cartesian3.fromDegrees(116.3974, 39.9192, 0),
+      model: {
+        uri: '/img/snowman.glb',  //不能使用url
+        scale: 12.0,
+        minimumPixelSize: 640,      // 模型太远时最小显示尺寸
+        maximumScale: 2000          // 限制最大缩放倍数
+      }
+    })*/
 
   viewer.camera.flyTo({
     destination: Cesium.Cartesian3.fromDegrees(116.3974, 39.9092, 30000.0),
@@ -154,10 +154,9 @@ onMounted(() => {
   })
 
   //视角切换
-  const btn = document.querySelector('#change-btn button')
+  const change_btn = document.querySelector('#change-btn #change')
   let isBeiJing = false
-  btn.addEventListener('click', () => {
-
+  change_btn.addEventListener('click', () => {
     const BeiJing = {
       lon: 116.3974,
       lat: 39.9092
@@ -180,14 +179,83 @@ onMounted(() => {
     isBeiJing = !isBeiJing
 
   })
-  //viewer.flyTo(viewer.entities)
+
+  //加载GeoJson数据
+  const geojsonBtn = document.querySelector('#geojson')
+  const geojsonInput = document.querySelector('#geojsonInput')
+  // 点击按钮 → 打开文件选择框
+  geojsonBtn.addEventListener('click', () => {
+    geojsonInput.click()
+  })
+
+  // 文件选择完成后读取
+  geojsonInput.addEventListener('change', (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = function (e) {
+      try {
+        const geojsonText = e.target.result
+        const geojsonData = JSON.parse(geojsonText)
+
+        // 加载到 Cesium
+        Cesium.GeoJsonDataSource.load(geojsonData).then((dataSource) => {
+          viewer.dataSources.add(dataSource)
+          viewer.zoomTo(dataSource)
+        }).catch(err => {
+          console.error('加载GeoJSON失败', err)
+        })
+      } catch (err) {
+        console.error('解析GeoJSON失败', err)
+      }
+    }
+    reader.readAsText(file)
+  })
+
+
+  // ==== GML/KML/KMZ ====
+  const gmlBtn = document.querySelector('#gml')
+  const gmlInput = document.querySelector('#gmlInput')
+
+  gmlBtn.addEventListener('click', () => gmlInput.click())
+
+  gmlInput.addEventListener('change', (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        // Cesium 可以直接加载字符串或 Blob
+        const blob = new Blob([e.target.result], {type: 'text/xml'})
+        Cesium.KmlDataSource.load(blob, {
+          camera: viewer.camera,
+          clampToGround: true
+        }).then((dataSource) => {
+          viewer.dataSources.add(dataSource)
+          viewer.zoomTo(dataSource)
+        })
+      } catch (err) {
+        console.error('加载GML失败', err)
+      }
+    }
+    reader.readAsText(file)
+  })
+
+
 })
 </script>
 
 <template>
   <div id="cesiumContainer" class="cesium-container"></div>
   <div id="change-btn">
-    <button>切换</button>
+    <button id="change">切换</button>
+    <button id="geojson">加载GeoJson数据</button>
+    <input type="file" id="geojsonInput" style="display:none" accept=".geojson"/>
+    <button id="gml">加载GML数据</button>
+    <input type="file" id="gmlInput" style="display:none" accept=".gml,.kml,.kmz"/>
+
   </div>
 </template>
 
@@ -203,5 +271,11 @@ onMounted(() => {
   top: 20px;
   left: 20px;
   z-index: 10;
+  display: flex;
+  flex-direction: column; /* 垂直排列 */
+  gap: 10px; /* 按钮间距 */
+}
+
+#change-btn button {
 }
 </style>

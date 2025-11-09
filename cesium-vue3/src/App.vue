@@ -1,9 +1,10 @@
 <script setup>
 import HelloWorld from './components/HelloWorld.vue'
+import Week3 from  './components/week3.vue'
 </script>
 
 <template>
-  <HelloWorld msg="Vite + Vue + Cesium" />
+  <Week3/>
 </template>
 
 <style scoped>
